@@ -1,5 +1,6 @@
-import { Table,Model, Column, DataType, HasMany } from 'sequelize-typescript';
+import { Table,Model, Column, DataType, HasMany, BeforeValidate, BeforeUpdate } from 'sequelize-typescript';
 import { Product } from 'src/models/product.model';
+import Helper from 'src/utils/helper';
 
 @Table
 export class Category extends Model<Category> {
@@ -37,4 +38,23 @@ export class Category extends Model<Category> {
   //Relationships
   @HasMany(() => Product)
   products: Product[];
+
+  @BeforeValidate
+  static makeSlug(newCategory: Category) {
+    const name = newCategory.dataValues.name;
+    if(newCategory.isNewRecord && name){
+      const slug = Helper.makeSlugFromString(name);
+      newCategory.setDataValue('slug', slug);
+    }
+  }
+
+  @BeforeUpdate
+  static updateSlug(category: Category) {
+    if(category.changed('name')) {
+      const name = category.dataValues.name;
+      const slug = Helper.makeSlugFromString(name);
+      category.setDataValue('slug', slug);
+    }
+    
+  }
 }

@@ -1,26 +1,33 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/sequelize';
+import { User } from 'src/models';
+import { CreateUserDto } from 'src/modules/user/dto/createUser.dto';
+
 
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
+    constructor(
+        @InjectModel(User) private readonly userModel: typeof User,
+        private readonly jwtService: JwtService,
+    ) {}
 
-  findAll() {
-    return `This action returns all user`;
-  }
+    async findByEmail(email: string) {
+        return this.userModel.findOne({where: {email}});
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+    async validateUser(email: string, password: string) {
+        const user = await this.findByEmail(email);
+        if (!user) throw new BadRequestException('Tài khoản không tồn tại');
+        const isCorrectPassword = user.comparePassword(password);
+        if (!isCorrectPassword) throw new BadRequestException('Sai mật khẩu');
+        return user
+    }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
+    async register(createUserDto: CreateUserDto) {
+        const user = await this.findByEmail(createUserDto.email);
+        if (user) throw new BadRequestException('Email đã tồn tại');
+        await this.userModel.create(createUserDto as any);
+        return {message: 'Đăng ký thành công'};
+    }
 }

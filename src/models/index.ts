@@ -2,3 +2,15 @@ export * from './user.model';
 export * from './category.model';
 export * from './product.model';
 export * from './productVariant.model';
+export * from './ingredient.model'
+export * from './productIngredient.model'
+export * from './address.model'
+export * from './order.model'
+export * from './orderItem.model'
+export * from './orderItemIngredient.model'
+export * from './cart.model'
+export * from './cartItem.model'
+export * from './cartItemIngredients.model'
+export * from './coupon.model'
+export * from './userCoupon.model'
+export * from './review.model'

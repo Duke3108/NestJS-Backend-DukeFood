@@ -1,18 +1,45 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { TransformInterceptor } from 'src/common/interceptors/response.interceptor';
+import { AllExceptionFilter } from 'src/common/filters/allException.filter';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const logger = new Logger('Duke')
+  const logger = new Logger('Duke');
 
-  const configService = new ConfigService()
+  const configService = new ConfigService();
+
+  app.setGlobalPrefix('api/v1');
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, //chuyển json thành object
+      //transformOptions: {enableImplicitConversion: true},//cho phép transform dữ liệu của field
+      whitelist: true, //xóa các trường ko có trong bảng
+      forbidNonWhitelisted: true, //báo lỗi thừa field
+    }),
+  );
+  app.useGlobalInterceptors(new TransformInterceptor())
+  app.useGlobalFilters(new AllExceptionFilter())
+
+  //Swagger setup
+   const config = new DocumentBuilder()
+    .setTitle('DukeFoood API')
+    .setDescription('The DukeFoood API description')
+    .setVersion('1.0')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/v1/docs', app, documentFactory);
+
 
   const port = configService.get<string>('PORT') || 5002
 
-  logger.log(`Server started on port ${port}`)
+  logger.log(`Server started on port ${port}`);
+  logger.log(`Swagger docs available at: http://localhost:${port}/api/v1/docs`);
   await app.listen(port);
 }
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
